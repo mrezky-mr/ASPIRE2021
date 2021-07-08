@@ -21,7 +21,8 @@ mpl.use('Agg')
 #integrator options
 sim.integrator = "ias15"
 sim.gravity = "compensated"
-sim.dt = 0.025*2.*np.pi # we're working in units where 1 year = 2*pi
+sim.softening = 6.68458712e-9   #based on sigma_{c,num}, in au
+sim.dt = 0.025*2.*np.pi
 sim.testparticle_type = 1
 sim.ri_ias15.epsilon = 1e-6
 
@@ -35,13 +36,13 @@ sim.track_energy_offset = 1
 def rand_uniform(minimum, maximum):
     return np.random.uniform()*(maximum-minimum)+minimum
 
-N_pl = 2000                         # Number of planetesimals
+N_pl = 1000                         # Number of planetesimals
 Mtot_disk = 4.188e18                # Total mass of planetesimal disk, in kg
 m_pl = Mtot_disk / float(N_pl)      # Mass of each planetesimal, in kg
-r_pl = 8.43594895e-8                # Radius of each planetesimal, in au
+r_pl = 1.19253034e-7                # Radius of each planetesimal, in au
 r_h = 4.44372861e-4                 # Hill's radius, in au
 v_dp = 6.68458712e-13               # Maximum velocity dispersion, in au/s
-orb = 31                            # Number of orbit for integration
+orb = 44                            # Number of orbit for integration
 
 np.random.seed(50) #by setting a seed we will reproduce the same simulation every time
 while sim.N < N_pl:
