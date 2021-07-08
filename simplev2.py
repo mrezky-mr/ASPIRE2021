@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 
 sim = rebound.Simulation()
-sim.units = ('yr','au','kg')
+sim.units = ('yr','AU','kg')
 
 plt.ioff()
 mpl.use('Agg')
@@ -41,7 +41,7 @@ Mtot_disk = 4.188e18                # Total mass of planetesimal disk, in kg
 m_pl = Mtot_disk / float(N_pl)      # Mass of each planetesimal, in kg
 r_pl = 1.19253034e-7                # Radius of each planetesimal, in au
 r_h = 4.44372861e-4                 # Hill's radius, in au
-v_dp = 6.68458712e-13               # Maximum velocity dispersion, in au/s
+v_dp = 2.10949526e-5                # Maximum velocity dispersion, in au/yr
 orb = 44                            # Number of orbit for integration
 
 np.random.seed(50) #by setting a seed we will reproduce the same simulation every time
