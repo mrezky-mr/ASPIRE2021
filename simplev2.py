@@ -94,7 +94,7 @@ for i,t in enumerate(times):
     sim.integrate(t)
     totalN[i] = sim.N
     errors[i] = abs((sim.calculate_energy() - E0)/E0)
-    if t % 5 < 1:
+    if t % 10 < 1:
         coords = np.zeros((5,sim.N))
         for i in range(sim.N):
             coords[0][i], coords[1][i], coords[2][i] = sim.particles[i].x, sim.particles[i].y, sim.particles[i].z
