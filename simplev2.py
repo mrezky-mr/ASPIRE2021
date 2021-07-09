@@ -20,9 +20,9 @@ mpl.use('Agg')
 
 #integrator options
 sim.integrator = "ias15"
-sim.gravity = "compensated"
+#sim.gravity = "compensated"
 sim.softening = 6.68458712e-9   #based on sigma_{c,num}, in au
-sim.dt = 0.025*2.*np.pi
+sim.dt = 0.002*2.*np.pi
 sim.testparticle_type = 1
 sim.ri_ias15.epsilon = 1e-6
 
@@ -40,9 +40,9 @@ N_pl = 1000                         # Number of planetesimals
 Mtot_disk = 4.188e18                # Total mass of planetesimal disk, in kg
 m_pl = Mtot_disk / float(N_pl)      # Mass of each planetesimal, in kg
 r_pl = 1.19253034e-7                # Radius of each planetesimal, in au
-r_h = 4.44372861e-4                 # Hill's radius, in au
+r_h = 4.44372861e-4                 # Hills radius, in au
 v_dp = 2.10949526e-5                # Maximum velocity dispersion, in au/yr
-orb = 44                            # Number of orbit for integration
+orb = 0.2038593524                  # Number of orbit for integration
 
 np.random.seed(50) #by setting a seed we will reproduce the same simulation every time
 while sim.N < N_pl:
@@ -73,7 +73,7 @@ ax1.scatter(coords[0],coords[1], s=2)
 plt.xlabel('X')
 plt.ylabel('Y')
 fig1.tight_layout()
-plt.savefig("initial_2d.png")
+plt.savefig("2d_initial.png")
 plt.close(fig1)
 
 fig2 = plt.figure()
@@ -83,44 +83,48 @@ ax2.set_xlabel('X')
 ax2.set_ylabel('Y')
 ax2.set_zlabel('Z')
 fig2.tight_layout()
-plt.savefig("initial_3d.png")
+plt.savefig("3d_initial.png")
 plt.close(fig2)
 
-ts = int(orb*2*np.pi)
-times = np.linspace(0.,ts,ts)
+ts = orb*2*np.pi
+times = np.linspace(0.,ts,50)
 totalN = np.zeros(len(times))
 errors = np.zeros(len(times))
 for i,t in enumerate(times):
     sim.integrate(t)
     totalN[i] = sim.N
     errors[i] = abs((sim.calculate_energy() - E0)/E0)
-    if t % 10 < 1:
+    if i % 5 == 0:
         coords = np.zeros((5,sim.N))
-        for i in range(sim.N):
-            coords[0][i], coords[1][i], coords[2][i] = sim.particles[i].x, sim.particles[i].y, sim.particles[i].z
-            coords[3][i], coords[4][i] = sim.particles[i].vx, sim.particles[i].vy
+        for j in range(sim.N):
+            coords[0][j], coords[1][j], coords[2][j] = sim.particles[j].x, sim.particles[j].y, sim.particles[j].z
+            coords[3][j], coords[4][j] = sim.particles[j].vx, sim.particles[j].vy
         fig3, ax3 = plt.subplots()
-        plt.title("t = {a}".format(a=int(t)), loc='right')
+        plt.title("t = {a}".format(a=t))
         ax3.axis('equal')
         ax3.scatter(coords[0],coords[1], s=2)
-        ax3.scatter(sim.particles[0].x,sim.particles[0].y, s=2)
+        ax3.scatter(sim.particles[0].x,sim.particles[0].y, s=5)
         ax3.quiver(coords[0],coords[1],coords[3],coords[4])
         plt.xlabel('X')
         plt.ylabel('Y')
         fig3.tight_layout()
-        plt.savefig("t_{a}_2d.png".format(a=int(t)))
+        plt.savefig("2d_t_{a}.png".format(a=i))
         plt.close(fig3)
         
-        fig4 = plt.figure()
+        fig4 = plt.figure(figsize=(10,10))
         ax4 = plt.axes(projection='3d')
-        ax4.scatter3D(coords[0],coords[1],coords[2], s=2)
+        ax4.scatter3D(coords[0],coords[1],coords[2], s=5)
         ax4.set_xlabel('X')
         ax4.set_ylabel('Y')
         ax4.set_zlabel('Z')
+        ax4.set_xlim(-r_h, r_h)
+        ax4.set_ylim(-r_h, r_h)
+        ax4.set_zlim(-r_h, r_h)
         fig4.tight_layout()
-        plt.title("t = {a}".format(a=int(t)), loc='right')
-        plt.savefig("t_{a}_3d.png".format(a=int(t)))
+        plt.title("t = {a}".format(a=t))
+        plt.savefig("3d_t_{a}.png".format(a=i))
         plt.close(fig4)
+    sim.simulationarchive_snapshot('simplev2_01.bin')
     print(t)
 
 fig5 = plt.figure(figsize=(10,7))
@@ -142,13 +146,6 @@ p_v = []
 coords = np.zeros((3,sim.N))
 for i in range(sim.N):
     coords[0][i], coords[1][i], coords[2][i] = sim.particles[i].x, sim.particles[i].y, sim.particles[i].z
-    p_mass.append(sim.particles[i].m)
-    p_rad.append(sim.particles[i].r)
-    x = np.array([sim.particles[i].vx, sim.particles[i].vy])
-    p_v.append(np.linalg.norm(x)*149597870700)
-    
-dat = np.vstack((p_mass, p_rad, p_v))
-np.savetxt("final_pdata.txt", dat)
     
 fig6, ax6 = plt.subplots() 
 ax6.axis('equal')
@@ -156,7 +153,7 @@ ax6.scatter(coords[0],coords[1], s=2)
 plt.xlabel('X')
 plt.ylabel('Y')
 fig6.tight_layout()
-plt.savefig("final_2d.png")
+plt.savefig("2d_final.png")
 plt.close(fig6)
 
 fig7 = plt.figure()
@@ -165,13 +162,9 @@ ax7.scatter3D(coords[0],coords[1],coords[2], s=2)
 ax7.set_xlabel('X')
 ax7.set_ylabel('Y')
 ax7.set_zlabel('Z')
+ax7.set_xlim(-r_h, r_h)
+ax7.set_ylim(-r_h, r_h)
+ax7.set_zlim(-r_h, r_h)
 fig7 .tight_layout()
-plt.savefig("final_3d.png")
+plt.savefig("3d_final.png")
 plt.close(fig7)
-
-print("minimum velocity (m/s) = {a}".format(a=min(p_v)))
-print("maximum velocity (m/s) = {a}".format(a=max(p_v)))
-print("minimum radius (au) = {a}".format(a=min(p_rad)))
-print("maximum radius (au) = {a}".format(a=max(p_rad)))
-print("minimum mass (kg) = {a}".format(a=min(p_mass)))
-print("maximum mass (kg) = {a}".format(a=max(p_mass)))
