@@ -39,7 +39,7 @@ def sphr(a, M, rho, R):
 #simulated particle properties
 def parpr(m, r, s, Nn):
     rh_1 = 3*m / (4*np.pi*r**3)     # density of the core dedicated to PX, in kg m-3
-    rh_s = 3*m / (4*np.pi*r_h**3)   # density of a particle in real system, in kg m-3
+    rh_s = 3*m / (4*np.pi*(r_h*au)**3)   # density of a particle in real system, in kg m-3
     N = rh_1/rh_s                   # number of particles in real system
     sn = s * N / Nn                 # coll. xsection in sim, in m2
     an = np.sqrt(sn/np.pi)          # radius of a particle, in m
