@@ -56,13 +56,6 @@ def pari(m, d, s, Nn):
     mp = m/Nn                       # mass of a sim particle in kg
     return an, mp, N
 
-#particle properties after contraction
-def parc(al, rl, rn):
-    an = al * (rn/rl)**(3/2)        # new radius of particle, in m
-    dn = dens(m_p, rn*au)           # new core density, in kg m-3
-    mn = mass(dn, an)               # new mass of particle, in kg
-    return an, mn, dn
-
 #filling factor
 def filf(N, a, r):
     return N * a**3 / r**3 
@@ -121,7 +114,7 @@ a = 5               # sphere distance from the star, in au
 
 #scaled-particle parameters, for 1 species of particle
 N_pl = 1000         # number of particles in sim
-v = 0               # maximum velocity dispersion in m/s, 0 = error
+v = 0               # maximum velocity dispersion in m/s
 af1 = 1             # radius of a particle in real system, in m
 
 ##############################################################################
@@ -160,30 +153,39 @@ ots = np.zeros(len(times))
 rl = r_h
 al = a1
 ml = mp1
-dl = dens(m_p, r_h*au)
+dl = dens(m_p, rl*au)
+vrms = 0
 
 #initiate and write the initial parameters of the simulation
-file = open("summary_{a}.txt".format(a=start),"w")
+file = open("summary_" + start + ".txt","w")
 file.write("SUMMARY OF THE SIMULATION")
 file.write("\n")
 file.write("INPUT PARAMETERS \n")
-file.write("The mass of the central star: {a} kg \n".format(a=M_star))
-file.write("The radius of the core: {a} m \n".format(a=r_p))
-file.write("The density of the core: {a} kg m-3 \n".format(a=rho_p))
-file.write("Distance between the core and its central star: {b} au \n".format(b=a))
-file.write("The maximum velocity dispersion of the particles: {a} m/s \n".format(a=v))
-file.write("Radius of the physical particles: {a} m \n".format(a=af1))
-file.write("The amount of particles in the simulation: {a} \n".format(a=N_pl))
-file.write("The coefficient of restitution: {a} \n".format(a=cor))
-file.write("Tolerance: {a} \n".format(a=sim.ri_ias15.epsilon))
+file.write("Central star mass (kg)          : {a} \n".format(a=M_star))
+file.write("Radius of the core (m)          : {a} \n".format(a=r_p))
+file.write("Density of the core (kg m-3)    : {a} \n".format(a=rho_p))
+file.write("Central star distance (AU)      : {b} \n".format(b=a))
+file.write("The max. particle velocity (m/s): {a} \n".format(a=v))
+file.write("Radius of phys. particles (m)   : {a} \n".format(a=af1))
+file.write("Number of sim. particles        : {a} \n".format(a=N_pl))
+file.write("Integrator                      : IAS15 \n")
+file.write("Integrator tolerance            : {a} \n".format(a=sim.ri_ias15.epsilon))
+file.write("Collision detection mode        : direct \n")
+file.write("Collision resolver mode         : hardsphere \n")
+file.write("The coefficient of restitution  : {a} \n".format(a=cor))
+file.write("Softening param. multiplier     : {a} \n".format(a=sof_mp))
+file.write("Free-fall time multiplier       : {a} \n".format(a=tff_mp))
 file.write("---------- \n")
+file.write("\n")
 file.write("CALCULATED PARAMETERS \n")
-file.write("Total mass of the core: {a} kg \n".format(a=m_p))
-file.write("Free-fall time: {a} years \n".format(a=tff))
-file.write("Orbital timescale: {a} years \n".format(a=P))
-file.write("This numerical integration was done for {a} of its orbital timescale \n".format(a=round(tff/P,4)))
-file.write("Collisional cross-section of the real particle: {a} m2 \n".format(a=s_cr1))
+file.write("Total mass of the core (kg)     : {a} \n".format(a=m_p))
+file.write("Free-fall time (yrs)            : {a} \n".format(a=tff))
+file.write("Orbital timescale (yrs)         : {a} \n".format(a=P))
+file.write("Simulation time (orb. timescl)  : {a} \n".format(a=round(tff/P,4)))
+file.write("Col. xsect. phys. particle (m2) : {a} \n".format(a=s_cr1))
+file.write("Number of phys. particles       : {a} \n".format(a=Np))
 file.write("---------- \n")
+file.write("\n")
 file.write("THE STATE OF EACH INTEGRATION STEP \n")
 
 #starting the integration and data collection for each timestep
@@ -192,16 +194,16 @@ for i,t in enumerate(times):
     #numerical integration
     sim.integrate(t)
     errors[i] = (sim.calculate_energy() - E0)/E0
-    amx, amy, amz = sim.calculate_angular_momentum()
     Ncol[i] = sim.collisions_Nlog/N0
-    if t == 0:
-        Ncot[i] = 0
-    else:
-        Ncot[i] = sim.collisions_Nlog/(N_pl*t*y)
+    amx, amy, amz = sim.calculate_angular_momentum()
     if am0 == 0:
         am[i] = 0
     else:
         am[i] = (np.sqrt(amx**2 + amy**2 + amz**2) - am0)/am0
+    if t == 0:
+        Ncot[i] = 0
+    else:
+        Ncot[i] = sim.collisions_Nlog/(N_pl*t*y)
     
     print('-----')
     print("Integration time (tff)       : ", t/tff)
@@ -221,7 +223,6 @@ for i,t in enumerate(times):
     
     if i % 5 == 0:
         coords = np.zeros((6,sim.N))
-        
         vm = 0
         #plotting the position and velocity vector of the particles (2D)
         for j in range(sim.N):
@@ -266,18 +267,18 @@ for i,t in enumerate(times):
         plt.close(fig2)
     
     file.write("\n")
-    file.write("Time: {a} of tff \n".format(a=t/tff))
-    file.write("Total collision counter: {a} times \n".format(a=sim.collisions_Nlog))
-    file.write("Relative energy offset: {a} \n".format(a=errors[i]))
+    file.write("Integration time (tff)          : {a} \n".format(a=t/tff))
+    file.write("Sphere radius (rhill)           : {a} \n".format(a=rl/r_h))
+    file.write("Sphere density (kg m-3)         : {a} \n".format(a=dl))
+    file.write("Radius of sim. particles (km)   : {a} \n".format(a=al/1e3))
+    file.write("Mass of sim. particles (kg)     : {a} \n".format(a=ml))
+    file.write("Num. of sim. particles          : {a} \n".format(a=sim.N))
+    file.write("Particle's RMS velocity (m/s)   : {a} \n".format(a=vrms))
+    file.write("Filling factor                  : {a} \n".format(a=f))
+    file.write("Total collision counter         : {a} \n".format(a=sim.collisions_Nlog))
+    file.write("Collision rate (s-1)            : {a} \n".format(a=Ncot[i]))
+    file.write("Relative energy offset          : {a} \n".format(a=errors[i]))
     file.write("Relative angular momentum offset: {a} \n".format(a=am[i]))
-    file.write("\n")
-    file.write("Cloud sphere radius: {a} times rhill \n".format(a=rl/r_h))
-    file.write("Sphere density: {a} kg m-3 \n".format(a=dl))
-    file.write("The amount of particles in the physical system: {a} \n".format(a=Np))
-    file.write("Radius of a particle: {a} km \n".format(a=al/1e3))
-    file.write("Mass of a particle: {a} kg \n".format(a=ml))
-    file.write("Softening parameters: {a} km \n".format(a=sim.softening*au/1e3))
-    file.write("Filling factor: {a}\n".format(a=f))
     file.write("............ \n")
 
     if i % 1 == 0:
@@ -327,8 +328,9 @@ for i,t in enumerate(times):
         rrms = np.sqrt(ra/sim.N)            # radius of the new sphere, in au
         f = filf(N_pl, al, rrms*au)         # filling factor update
         rl = rrms
+        dl = dens(ml, rrms*au)
     
-    sim.simulationarchive_snapshot("stmod_novar_{a}.bin".format(a=start))  
+    sim.simulationarchive_snapshot("stmod_novar_" + start + ".bin")  
     
 #plotting the energy offset and collision number of the simulation
 fig3 = plt.figure(figsize=(14,10))
@@ -345,13 +347,13 @@ plt.yscale("log")
 axc.set_ylabel(r"$N_{c,num} / N_0$")
 axd = plt.subplot(324)
 plt.plot(times/tff, ams)
-axd.set_ylabel(r"$l_{z}$")
+axd.set_ylabel(r"$l_{z} (m^2 s^{-1})$")
 axd.set_xlabel(r"Time [$t_{ff}$]")
 axe = plt.subplot(325)
 plt.plot(times/tff, rcm)
 axe.set_ylabel(r"$r_{com}$")
 axe.set_xlabel(r"Time [$t_{ff}$]")
-plt.savefig("stats_{a}.png".format(a=start))
+plt.savefig("stats_" + start + ".png")
 plt.close(fig3)
 
 fig4, ax4 = plt.subplots()
@@ -361,7 +363,7 @@ plt.yscale("log")
 ax4.set_ylabel(r"Collision rate ($s^{-1}$)")
 ax4.set_xlabel(r"Time [$t_{ff}$]")
 plt.legend()
-plt.savefig("collstat_{a}.png".format(a=start))
+plt.savefig("colstats_" + start + ".png")
 plt.close(fig4)
 
 coords = np.zeros((6,sim.N))
